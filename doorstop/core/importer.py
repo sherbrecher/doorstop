@@ -10,6 +10,8 @@ from typing import Any
 
 import openpyxl
 
+import pyexcel_ods3
+
 from doorstop import common, settings
 from doorstop.common import DoorstopError
 from doorstop.core.builder import _get_tree
@@ -216,6 +218,38 @@ def _file_xlsx(path, document, mapping=None):
     _itemize(header, data, document, mapping=mapping)
 
 
+def _file_ods(path, document, mapping=None):
+    """Import items from an ODS export to a document.
+
+    :param path: input file location
+    :param document: document to import items
+    :param mapping: dictionary mapping custom to standard attribute names
+
+    """
+    header = []
+    data = []
+
+    # Parse the file
+    log.debug("reading rows in {}...".format(path))
+    ods = pyexcel_ods3.get_data(path)
+
+    index = 0
+
+    # Extract header and data rows
+    for index, row in enumerate(ods["Sheet 1"]):
+        row2 = []
+        for cell in row:
+            if index == 0:
+                header.append(cell)
+            else:
+                row2.append(cell)
+        if index:
+            data.append(row2)
+
+    # Import items from the rows
+    _itemize(header, data, document, mapping=mapping)
+
+
 def _itemize(header, data, document, mapping=None):
     """Conversion function for multiple formats.
 
@@ -316,6 +350,7 @@ FORMAT_FILE = {
     ".csv": _file_csv,
     ".tsv": _file_tsv,
     ".xlsx": _file_xlsx,
+    ".ods": _file_ods,
 }
 
 

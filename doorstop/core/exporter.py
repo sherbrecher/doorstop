@@ -10,6 +10,9 @@ from typing import Any, Dict
 import openpyxl
 import yaml
 
+from collections import OrderedDict
+import pyexcel_ods3
+
 from doorstop import common, settings
 from doorstop.common import DoorstopError
 from doorstop.core.types import iter_documents, iter_items
@@ -311,6 +314,30 @@ def _get_xlsx(obj, auto):
     return workbook
 
 
+def _file_ods(obj, path, auto=False):
+    """Create an ODS file at the given path.
+
+    :param obj: Item, list of Items, or Document to export
+    :param path: location to export ODS file
+    :param auto: include placeholders for new items on import
+
+    :return: path of created file
+
+    """
+    d = []
+    
+    for row, data in enumerate(_tabulate(obj, auto=auto), start=1):
+        d.append([])
+        for col_idx, value in enumerate(data, start=1):
+            d[-1].append(str(value))
+
+    data = OrderedDict()
+    data.update({"Sheet 1": d})
+    pyexcel_ods3.save_data(path, data)
+
+    return path
+
+
 def _width(text):
     """Get the maximum length in a multiline string."""
     if text:
@@ -322,7 +349,7 @@ def _width(text):
 # Mapping from file extension to lines generator
 FORMAT_LINES = {".yml": _lines_yaml}
 # Mapping from file extension to file generator
-FORMAT_FILE = {".csv": _file_csv, ".tsv": _file_tsv, ".xlsx": _file_xlsx}
+FORMAT_FILE = {".csv": _file_csv, ".ods": _file_ods, ".tsv": _file_tsv, ".xlsx": _file_xlsx}
 # Union of format dictionaries
 FORMAT = dict(list(FORMAT_LINES.items()) + list(FORMAT_FILE.items()))  # type: ignore
 
